@@ -18,14 +18,14 @@
 > assign_condition <- function(barcode) \{ if (startsWith(barcode, "H")) \{ return("Healthy") \} else if (startsWith(barcode, "N")) \{ return("Non-Inflamed") \} else if (startsWith(barcode, "I")) \{ return("Inflamed") \} else \{ return("Unknown") \}\}\
 \
 > conditions <- sapply(barcodes, assign_condition)\
-> CO_EPI[[\'93tissue_condition\'94]] <- conditions\
+> CO_EPI[["tissue_condition"]] <- conditions\
 \
-> split_seurat_objects <- SplitObject(CO_EPI, split.by = \'93tissue_condition\'94)\
+> split_seurat_objects <- SplitObject(CO_EPI, split.by = "tissue_condition")\
 \
 ## Split the object by using the new groups\
 > healthy_object <- split_seurat_objects[["Healthy"]]\
 > non_inflamed_object <- split_seurat_objects[["Non-Inflamed"]]\
-> inflamed_object <- split_seurat_objects[["Inflamed\'94]]\
+> inflamed_object <- split_seurat_objects[["Inflamed"]]\
 \
 > healthy_object\
 > non_inflamed_object\
