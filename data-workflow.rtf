@@ -39,7 +39,7 @@
 > healthy_object <- NormalizeData(healthy_object)\
 \
 ## Find the most variable genes and visualize\
-> healthy_object <- FindVariableFeatures(healthy_object, selection.methd = "vst", nfeatures = 2000)\
+> healthy_object <- FindVariableFeatures(healthy_object, selection.method = "vst", nfeatures = 2000)\
 > top10 <- head(VariableFeatures(healthy_object), 10)\
 > top10\
 \
@@ -71,6 +71,5 @@
 > head(cluster1.markers, 15)\
 \
 > cluster2.markers <- FindMarkers(healthy_object, ident.1 = 2, min.pct = 0.25)\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-\cf0 > head(cluster2.markers, 15)\
+> head(cluster2.markers, 15)\
 }
