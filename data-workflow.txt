@@ -65,5 +65,5 @@
 > DimPlot(CO_EPI.combined, reduction = "umap", split.by = "tissue_condition")
 
 ## Identify a cluster of interest based on the plots and find the top DE markers for them (healthy vs. inflamed)
-> cluster9.markers <- FindConservedMarkers(CO_EPI.combined, ident.1 = 6, grouping.var = "tissue_condition", verbose = FALSE, test.use = "MAST")
+> cluster9.markers <- FindConservedMarkers(CO_EPI.combined, ident.1 = 9, grouping.var = "tissue_condition", verbose = FALSE, test.use = "MAST")
 > head(cluster9.markers, 15)
