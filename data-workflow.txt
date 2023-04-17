@@ -1,0 +1,69 @@
+
+> library(dplyr)
+> library(Seurat)
+> library(patchwork)
+> library(future)
+
+## Use parallelization
+> plan()
+> plan(multisession, workers = 4)
+> plan()
+> options(future.globals.maxSize= 2097152000)
+
+## Read in Colon Epithelial data
+> CO_EPI.data <- Read10X(data.dir = "/Users/sunhochung/Desktop/445-project/CO_EPI")
+> CO_EPI <- CreateSeuratObject(counts = CO_EPI.data, project = "CO_EPI", min.cells = 3, min.features = 200)
+
+## Split dataset into healthy, inflamed, and non-inflamed groups
+> barcodes <- colnames(CO_EPI)
+> assign_condition <- function(barcode) { if (startsWith(barcode, "H")) { return("Healthy") } else if (startsWith(barcode, "N")) { return("Non-Inflamed") } else if (startsWith(barcode, "I")) { return("Inflamed") } else { return("Unknown") }}
+
+> conditions <- sapply(barcodes, assign_condition)
+> CO_EPI[["tissue_condition"]] <- conditions
+
+> split_seurat_objects <- SplitObject(CO_EPI, split.by = "tissue_condition")
+
+## Split the object by using the new groups
+> healthy_object <- split_seurat_objects[["Healthy"]]
+> non_inflamed_object <- split_seurat_objects[["Non-Inflamed"]]
+> inflamed_object <- split_seurat_objects[["Inflamed"]]
+
+> healthy_object
+> non_inflamed_object
+> inflamed_object
+
+## Integrate the healthy and inflamed datasets
+> CO_EPI.list <- c(healthy_object, inflamed_object)
+> CO_EPI.anchors <- FindIntegrationAnchors(object.list = CO_EPI.list, dims = 1:20)
+> CO_EPI.combined <- IntegrateData(anchorset = CO_EPI.anchors, dims = 1:20)
+
+## Standard workflow
+> DefaultAssay(CO_EPI.combined) <- "integrated"
+
+## Scale the data
+> all.genes <- rownames(CO_EPI.combined)
+> CO_EPI.combined <- ScaleData(CO_EPI.combined, features = all.genes)
+
+## Run PCA
+> CO_EPI.combined <- RunPCA(CO_EPI.combined, features = VariableFeatures(object = CO_EPI.combined))
+> print(CO_EPI.combined[["pca"]], dims = 1:5, nfeatures = 5)
+
+## Find clusters
+> CO_EPI.combined <- FindNeighbors(CO_EPI.combined, dims = 1:30)
+> CO_EPI.combined <- FindClusters(CO_EPI.combined, resolution = 0.5)
+
+> head(Idents(CO_EPI.combined), 5)
+
+## Run UMAP
+> CO_EPI.combined <- RunUMAP(CO_EPI.combined, reduction = "pca", dims = 1:30)
+
+## Visualize the clusters and compare between inflamed vs. healthy
+> plot1 <- DimPlot(CO_EPI.combined, reduction = "umap", group.by = "tissue_condition")
+> plot2 <- DimPlot(CO_EPI.combined, reduction = "umap", label = TRUE, repel = TRUE)
+> plot1 + plot2
+
+> DimPlot(CO_EPI.combined, reduction = "umap", split.by = "tissue_condition")
+
+## Identify a cluster of interest based on the plots and find the top DE markers for them (healthy vs. inflamed)
+> cluster9.markers <- FindConservedMarkers(CO_EPI.combined, ident.1 = 6, grouping.var = "tissue_condition", verbose = FALSE, test.use = "MAST")
+> head(cluster9.markers, 15)

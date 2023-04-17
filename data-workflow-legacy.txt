@@ -1,0 +1,44 @@
+
+## LEGACY: the below code is for reference only.
+
+## Determine percent mtDNA and visualize
+> CO_EPI.combined[["percent.mt"]] <- PercentageFeatureSet(CO_EPI.combined, pattern = "^MT-")
+> VlnPlot(CO_EPI.combined, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+
+## Normalize the data
+> CO_EPI.combined <- NormalizeData(CO_EPI.combined)
+
+## Find the most variable genes and visualize
+> CO_EPI.combined <- FindVariableFeatures(CO_EPI.combined, selection.method = "vst", nfeatures = 2000)
+> top10 <- head(VariableFeatures(CO_EPI.combined), 10)
+> top10
+
+> plot1 <- VariableFeaturePlot(CO_EPI.combined)
+> plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+> plot1 + plot2
+
+## Scale the data
+> all.genes <- rownames(CO_EPI.combined)
+> CO_EPI.combined <- ScaleData(CO_EPI.combined, features = all.genes)
+
+## Run PCA
+> CO_EPI.combined <- RunPCA(CO_EPI.combined, features = VariableFeatures(object = CO_EPI.combined))
+> print(CO_EPI.combined[["pca"]], dims = 1:5, nfeatures = 5)
+> DimPlot(CO_EPI.combined, reduction = "pca")
+
+## Find clusters
+> CO_EPI.combined <- FindNeighbors(CO_EPI.combined, dims = 1:10)
+> CO_EPI.combined <- FindClusters(CO_EPI.combined, resolution = 0.5)
+
+> head(Idents(CO_EPI.combined), 5)
+
+## Run UMAP
+> CO_EPI.combined <- RunUMAP(CO_EPI.combined, dims = 1:10)
+> DimPlot(CO_EPI.combined, reduction = "umap")
+
+## Find markers in each cluster
+> cluster1.markers <- FindMarkers(CO_EPI.combined, ident.1 = 1, min.pct = 0.25)
+> head(cluster1.markers, 15)
+
+> cluster2.markers <- FindMarkers(CO_EPI.combined, ident.1 = 2, min.pct = 0.25)
+> head(cluster2.markers, 15)
