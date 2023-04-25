@@ -30,13 +30,13 @@
 ## Standard workflow
 > DefaultAssay(CO_STR.combined) <- "integrated"
 
-## Calculate \'93cellular detection rate\'94 (CDR) for each cell
+## Calculate "cellular detection rate" (CDR) for each cell
 > expressed_genes_per_cell <- Matrix::colSums(CO_STR.combined@assays$RNA@counts > 0)
 > total_genes <- length(rownames(CO_STR.combined))
 > CDR <- expressed_genes_per_cell / total_genes
 > CO_STR.combined[["CDR"]] <- CDR
 
-## Need to add +1 to every count because DESeq2 can\'92t run if every gene contains at least one zero, cannot compute log geometric means
+## Need to add +1 to every count because DESeq2 can't run if every gene contains at least one zero, cannot compute log geometric means
 > CO_STR.combined[["RNA"]]@counts <- as.matrix(CO_STR.combined[["RNA"]]@counts)+1
 > count_matrix <- CO_STR.combined@assays$RNA@counts
 > metadata <- data.frame(tissue_condition = CO_STR.combined@meta.data$tissue_condition, CDR = CO_STR.combined@meta.data$CDR)
