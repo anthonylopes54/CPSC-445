@@ -1,0 +1,51 @@
+
+> library(dplyr)
+> library(patchwork)
+> library(future)
+> library(DESeq2)
+> library(Seurat)
+
+## First download dataset from study (CO_STR in this example)
+## Need barcodes.tsv, features.tsv, and the raw counts matrix
+## Put all files in the same folder named CO_STR and rename features file to genes.tsv
+## Also rename matrix file to matrix.mtx
+
+## Read in Colon Stromal data
+> CO_STR.data <- Read10X(data.dir = "/Users/jameschung/Desktop/CO_STR")
+> CO_STR <- CreateSeuratObject(counts = CO_STR.data, project = "CO_STR", min.cells = 3, min.features = 200)
+
+## Eliminate non-inflamed cells (same as MAST)
+> barcodes <- colnames(CO_STR)
+> assign_condition <- function(barcode) \{ if (startsWith(barcode, "H")) \{ return("Healthy") \} else if (startsWith(barcode, "N")) \{ return("Non-Inflamed") \} else if (startsWith(barcode, "I")) \{ return("Inflamed") \} else \{ return("Unknown") \}\}
+> conditions <- sapply(barcodes, assign_condition)
+> CO_STR[["tissue_condition"]] <- conditions
+> split_seurat_objects <- SplitObject(CO_STR, split.by = "tissue_condition")
+> healthy_object <- split_seurat_objects[["Healthy"]]
+> non_inflamed_object <- split_seurat_objects[["Non-Inflamed"]]
+> inflamed_object <- split_seurat_objects[["Inflamed"]]
+> CO_STR.list <- c(healthy_object, inflamed_object)
+> CO_STR.anchors <- FindIntegrationAnchors(object.list = CO_STR.list, dims = 1:20)
+> CO_STR.combined <- IntegrateData(anchorset = CO_STR.anchors, dims = 1:20)
+
+## Standard workflow
+> DefaultAssay(CO_STR.combined) <- "integrated"
+
+## Calculate \'93cellular detection rate\'94 (CDR) for each cell
+> expressed_genes_per_cell <- Matrix::colSums(CO_STR.combined@assays$RNA@counts > 0)
+> total_genes <- length(rownames(CO_STR.combined))
+> CDR <- expressed_genes_per_cell / total_genes
+> CO_STR.combined[["CDR"]] <- CDR
+
+## Need to add +1 to every count because DESeq2 can\'92t run if every gene contains at least one zero, cannot compute log geometric means
+> CO_STR.combined[["RNA"]]@counts <- as.matrix(CO_STR.combined[["RNA"]]@counts)+1
+> count_matrix <- CO_STR.combined@assays$RNA@counts
+> metadata <- data.frame(tissue_condition = CO_STR.combined@meta.data$tissue_condition, CDR = CO_STR.combined@meta.data$CDR)
+
+## Create DESeq object and run the analysis
+> DDS <- DESeqDataSetFromMatrix(countData = count_matrix, colData = metadata, design = ~ tissue_condition + CDR)
+> DDS <- DESeq(DDS)
+
+## Get results
+> results <- results(dds)
+> contrast <- c("tissue_condition", "Inflamed", "Healthy")
+> contrast_results <- results(dds, contrast = contrast)
